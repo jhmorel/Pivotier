@@ -6,7 +6,7 @@
 
 **Author:** Javier Hernández Morel
 
-**Colaborators:** Eniel Rodríguez Machado
+**Collaborator:** Eniel Rodríguez Machado
 
 ### Description
 
