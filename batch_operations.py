@@ -5,6 +5,8 @@ This module extends the basic alignment operations to support batch processing
 with additional controls and options for multiple object operations.
 """
 
+# This file contains batch operations for the Pivot Pro addon.
+
 import bpy
 import bmesh
 import mathutils
@@ -169,7 +171,7 @@ class VIEW3D_PT_batch_align_panel(bpy.types.Panel):
     bl_idname = "VIEW3D_PT_batch_align_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Align Toolkit'
+    bl_category = 'Pivotier'
     
     def draw(self, context):
         layout = self.layout

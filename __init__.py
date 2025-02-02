@@ -1,22 +1,23 @@
 """
-Align Toolkit - A Blender addon for enhanced object alignment and pivot point management.
+Pivotier - A Blender addon for enhanced object alignment and pivot point management.
 
 This addon provides tools to streamline 3D modeling workflow by offering various
 alignment utilities for objects, cursor, and view management.
 
 Author: Javier Hernández Morel
+Colaborators: Eniel Rodríguez Machado
 License: MIT
 """
 
 bl_info = {
-    "name": "Align Toolkit",
+    "name": "Pivotier",
     "author": "Javier Hernández Morel",
     "version": (1, 0, 0),
     "blender": (2, 80, 0),
-    "location": "View3D > UI > Align Toolkit",
+    "location": "View3D > UI > Pivotier",
     "description": "Tools for enhanced object alignment and pivot point management",
     "warning": "",
-    "doc_url": "https://github.com/jhmorel/AlignToolkit",
+    "doc_url": "https://github.com/jhmorel/Pivotier",
     "category": "Object",
 }
 
@@ -45,12 +46,12 @@ ADDON_MODULES = [
 ]
 
 # Addon category name used across all panels
-ADDON_CATEGORY = "Align Toolkit"
+ADDON_CATEGORY = "Pivotier"
 
 # Keymap configuration
 addon_keymaps: List[bpy.types.KeyMap] = []
 
-def get_preferences(context: bpy.types.Context) -> Optional[preferences.AlignToolkitPreferences]:
+def get_preferences(context: bpy.types.Context) -> Optional[preferences.PivotierPreferences]:
     """Get addon preferences.
     
     Args:

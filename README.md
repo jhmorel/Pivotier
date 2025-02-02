@@ -1,14 +1,15 @@
 <p align="center">
-  <img src="AlignToolkit_Banner.png" alt="Banner Image" />
+  <img src="Pivotier_Banner.png" alt="Banner Image" />
 </p>
 
-## Align Toolkit
+## Pivotier
 
 **Author:** Javier Hernández Morel
+**Colaborators:** Eniel Rodríguez Machado
 
 ### Description
 
-Align Toolkit is a Blender addon that offers tools to enhance and streamline your workflow for object alignment and pivot point management. It includes utilities to easily align objects and the cursor to specific positions and orientations, making it essential for 3D artists and designers.
+Pivotier is a Blender addon that offers tools to enhance and streamline your workflow for object alignment and pivot point management. It includes utilities to easily align objects and the cursor to specific positions and orientations, making it essential for 3D artists and designers.
 
 ### Features
 
@@ -20,14 +21,14 @@ Align Toolkit is a Blender addon that offers tools to enhance and streamline you
 
 ### Installation
 
-1. Download the latest release of the addon from the [Releases](https://github.com/jhmorel/AlignToolkit/releases) page.
+1. Download the latest release of the addon from the [Releases](https://github.com/jhmorel/Pivotier/releases) page.
 2. In Blender, go to `Edit > Preferences > Add-ons`.
 3. Click `Install...` and select the downloaded ZIP file.
-4. Enable the addon by checking the box next to "AlignToolkit".
+4. Enable the addon by checking the box next to "Pivotier".
 
 ### Usage
 
-Once installed, the tools provided by Align Toolkit can be accessed through the `Object` menu in the 3D Viewport or via the shortcut keys assigned to each function. Refer to the documentation for detailed usage instructions and examples.
+Once installed, the tools provided by Pivotier can be accessed through the `Object` menu in the 3D Viewport or via the shortcut keys assigned to each function. Refer to the documentation for detailed usage instructions and examples.
 
 ### About the Addon
 

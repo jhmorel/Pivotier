@@ -10,11 +10,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [v1.0.1] - 2024-08-02
 ### Changed
-- Renamed the sidebar tab in Blender's viewport from "Tools" to "Align Toolkit".
+- Renamed the sidebar tab in Blender's viewport from "Tools" to "Pivotier".
 
 ## [v1.0.0] - 2024-07-30
 ### Added
-- Initial release of AlignToolkit.
+- Initial release of Pivotier.
 - **align_cursor_to_normal**: Aligns the 3D cursor to the normal of the selected face, edge or vertex.
 - **align_object_to_cursor**: Aligns the selected object to the 3D cursor.
 - **set_pivot_to_base**: Sets the pivot point to the base of the selected object.
