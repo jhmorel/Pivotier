@@ -6,7 +6,9 @@
 
 **Author:** Javier Hernández Morel
 
-**Collaborator:** Eniel Rodríguez Machado
+**Collaborator:** Eniel Rodríguez Machado,
+
+Special thanks to **Eniel**, Senior Developer and close friend, whose expertise and guidance have been invaluable throughout the development of Pivotier.
 
 ### Description
 
