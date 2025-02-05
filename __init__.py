@@ -12,7 +12,7 @@ License: MIT
 bl_info = {
     "name": "Pivotier",
     "author": "Javier Hernández Morel",
-    "version": (1, 0, 0),
+    "version": (2, 0, 0),
     "blender": (2, 80, 0),
     "location": "View3D > UI > Pivotier",
     "description": "Tools for enhanced object alignment and pivot point management",

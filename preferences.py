@@ -37,7 +37,7 @@ class PIVOTIER_OT_add_preset(AddPresetBase, bpy.types.Operator):
 
 class PivotierPreferences(bpy.types.AddonPreferences):
     """Preferences for the Pivotier addon"""
-    bl_idname = "Pivotier"
+    bl_idname = __package__
 
     # General alignment preferences
     use_auto_align: bpy.props.BoolProperty(
