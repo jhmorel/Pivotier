@@ -8,8 +8,8 @@ maintainer = "jhmorel <jhmorel11art@gmail.com>"
 type = "add-on"
 
 website = "https://github.com/jhmorel/Pivotier"
-tags = ["Object", "Geometry", "Mesh", "3D View"]
-blender_version_min = "3.6.5"
+tags = ["Object", "Mesh", "3D View"]
+blender_version_min = "4.2.0"
 license = [
   "SPDX:GPL-3.0-or-later",
 ]
