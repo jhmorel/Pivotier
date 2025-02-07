@@ -34,24 +34,56 @@ def compute_alignment_data(bm: bmesh.types.BMesh) -> Optional[Tuple[mathutils.Ve
     """
     sel_faces, sel_edges, sel_verts = get_selection_data(bm)
     
+    # Calculate position like Blender's Cursor to Selected
     if sel_faces:
-        face = sel_faces[0]
-        normal = face.normal
-        location = face.calc_center_median()
-        tangent = (face.verts[1].co - face.verts[0].co).normalized()
+        # For faces, use the median of all selected vertices
+        verts = set()
+        for face in sel_faces:
+            verts.update(face.verts)
+        location = sum((v.co for v in verts), mathutils.Vector()) / len(verts)
+        
+        # Calculate median normal from faces
+        normal = mathutils.Vector((0, 0, 0))
+        for face in sel_faces:
+            normal += face.normal
+        normal = normal.normalized()
+        
+        # Use the first face's edge for tangent reference
+        tangent = (sel_faces[0].verts[1].co - sel_faces[0].verts[0].co).normalized()
         return normal, location, tangent
         
     elif sel_edges:
-        edge = sel_edges[0]
-        normal = edge.verts[0].normal.lerp(edge.verts[1].normal, 0.5).normalized()
-        location = edge.verts[0].co.lerp(edge.verts[1].co, 0.5)
-        tangent = (edge.verts[1].co - edge.verts[0].co).normalized()
+        # For edges, use the median of all selected vertices
+        verts = set()
+        for edge in sel_edges:
+            verts.update(edge.verts)
+        location = sum((v.co for v in verts), mathutils.Vector()) / len(verts)
+        
+        # Calculate median normal and tangent from edges
+        normal = mathutils.Vector((0, 0, 0))
+        tangent = mathutils.Vector((0, 0, 0))
+        for edge in sel_edges:
+            edge_normal = edge.verts[0].normal.lerp(edge.verts[1].normal, 0.5)
+            normal += edge_normal
+            edge_tangent = (edge.verts[1].co - edge.verts[0].co)
+            tangent += edge_tangent
+        
+        normal = normal.normalized()
+        tangent = tangent.normalized()
         return normal, location, tangent
         
     elif sel_verts:
+        # For vertices, use direct median of selected vertices
+        location = sum((v.co for v in sel_verts), mathutils.Vector()) / len(sel_verts)
+        
+        # Calculate median normal from vertices
+        normal = mathutils.Vector((0, 0, 0))
+        for vert in sel_verts:
+            normal += vert.normal
+        normal = normal.normalized()
+        
+        # Use the first vertex's edge for tangent reference
         vert = sel_verts[0]
-        normal = vert.normal
-        location = vert.co
         linked_edges = vert.link_edges
         tangent = ((linked_edges[0].verts[1].co - linked_edges[0].verts[0].co).normalized()
                   if linked_edges else mathutils.Vector((1, 0, 0)))
@@ -119,7 +151,7 @@ class VIEW3D_PT_align_cursor_to_normal_panel(bpy.types.Panel):
     bl_idname = "VIEW3D_PT_align_cursor_to_normal_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Align Toolkit'
+    bl_category = 'Pivotier'
     
     def draw(self, context):
         layout = self.layout

@@ -59,7 +59,7 @@ class VIEW3D_PT_align_object_to_cursor_panel(bpy.types.Panel):
     bl_idname = "VIEW3D_PT_align_object_to_cursor_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Align Toolkit'
+    bl_category = 'Pivotier'
     
     def draw(self, context):
         layout = self.layout

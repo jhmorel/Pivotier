@@ -1,7 +1,7 @@
 """
-Align Toolkit Preferences - Handles user preferences and customization options.
+Pivotier Preferences - Handles user preferences and customization options.
 
-This module provides a preferences system for the Align Toolkit addon,
+This module provides a preferences system for the Pivotier addon,
 allowing users to customize default behaviors and keymaps.
 """
 
@@ -10,22 +10,22 @@ from typing import Set
 from bl_ui.utils import PresetPanel
 from bl_operators.presets import AddPresetBase
 
-class VIEW3D_MT_align_toolkit_presets(bpy.types.Menu):
-    """Preset menu for Align Toolkit preferences"""
-    bl_label = "Align Toolkit Presets"
-    preset_subdir = "align_toolkit"
+class VIEW3D_MT_pivotier_presets(bpy.types.Menu):
+    """Preset menu for Pivotier preferences"""
+    bl_label = "Pivotier Presets"
+    preset_subdir = "pivotier"
     preset_operator = "script.execute_preset"
     draw = bpy.types.Menu.draw_preset
 
-class ALIGN_TOOLKIT_OT_add_preset(AddPresetBase, bpy.types.Operator):
-    """Add or remove a preset for Align Toolkit preferences"""
-    bl_idname = "align_toolkit.preset_add"
-    bl_label = "Add Align Toolkit Preset"
-    preset_menu = "VIEW3D_MT_align_toolkit_presets"
-    preset_subdir = "align_toolkit"
+class PIVOTIER_OT_add_preset(AddPresetBase, bpy.types.Operator):
+    """Add or remove a preset for Pivotier preferences"""
+    bl_idname = "pivotier.preset_add"
+    bl_label = "Add Pivotier Preset"
+    preset_menu = "VIEW3D_MT_pivotier_presets"
+    preset_subdir = "pivotier"
 
     preset_defines = [
-        "prefs = bpy.context.preferences.addons['AlignToolkit'].preferences"
+        "prefs = bpy.context.preferences.addons['Pivotier'].preferences"
     ]
 
     preset_values = [
@@ -35,9 +35,9 @@ class ALIGN_TOOLKIT_OT_add_preset(AddPresetBase, bpy.types.Operator):
         "prefs.coordinate_space"
     ]
 
-class AlignToolkitPreferences(bpy.types.AddonPreferences):
-    """Preferences for the Align Toolkit addon"""
-    bl_idname = "AlignToolkit"
+class PivotierPreferences(bpy.types.AddonPreferences):
+    """Preferences for the Pivotier addon"""
+    bl_idname = __package__
 
     # General alignment preferences
     use_auto_align: bpy.props.BoolProperty(
@@ -81,9 +81,9 @@ class AlignToolkitPreferences(bpy.types.AddonPreferences):
 
         # Preset menu
         row = layout.row(align=True)
-        row.menu("VIEW3D_MT_align_toolkit_presets", text=bpy.types.VIEW3D_MT_align_toolkit_presets.bl_label)
-        row.operator("align_toolkit.preset_add", text="", icon='ADD')
-        row.operator("align_toolkit.preset_add", text="", icon='REMOVE').remove_active = True
+        row.menu("VIEW3D_MT_pivotier_presets", text=bpy.types.VIEW3D_MT_pivotier_presets.bl_label)
+        row.operator("pivotier.preset_add", text="", icon='ADD')
+        row.operator("pivotier.preset_add", text="", icon='REMOVE').remove_active = True
 
         # General settings
         box = layout.box()
@@ -110,9 +110,9 @@ class AlignToolkitPreferences(bpy.types.AddonPreferences):
 
 # Registration
 classes = (
-    VIEW3D_MT_align_toolkit_presets,
-    ALIGN_TOOLKIT_OT_add_preset,
-    AlignToolkitPreferences,
+    VIEW3D_MT_pivotier_presets,
+    PIVOTIER_OT_add_preset,
+    PivotierPreferences,
 )
 
 def register():
