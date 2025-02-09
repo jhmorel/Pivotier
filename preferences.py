@@ -6,34 +6,6 @@ allowing users to customize default behaviors and keymaps.
 """
 
 import bpy
-from typing import Set
-from bl_ui.utils import PresetPanel
-from bl_operators.presets import AddPresetBase
-
-class VIEW3D_MT_pivotier_presets(bpy.types.Menu):
-    """Preset menu for Pivotier preferences"""
-    bl_label = "Pivotier Presets"
-    preset_subdir = "pivotier"
-    preset_operator = "script.execute_preset"
-    draw = bpy.types.Menu.draw_preset
-
-class PIVOTIER_OT_add_preset(AddPresetBase, bpy.types.Operator):
-    """Add or remove a preset for Pivotier preferences"""
-    bl_idname = "pivotier.preset_add"
-    bl_label = "Add Pivotier Preset"
-    preset_menu = "VIEW3D_MT_pivotier_presets"
-    preset_subdir = "pivotier"
-
-    preset_defines = [
-        "prefs = bpy.context.preferences.addons['Pivotier'].preferences"
-    ]
-
-    preset_values = [
-        "prefs.use_auto_align",
-        "prefs.align_to_active",
-        "prefs.preserve_location",
-        "prefs.coordinate_space"
-    ]
 
 class PivotierPreferences(bpy.types.AddonPreferences):
     """Preferences for the Pivotier addon"""
@@ -69,21 +41,8 @@ class PivotierPreferences(bpy.types.AddonPreferences):
         default='GLOBAL'
     )
 
-    # Keymap preferences
-    enable_keymaps: bpy.props.BoolProperty(
-        name="Enable Custom Keymaps",
-        description="Enable custom keyboard shortcuts",
-        default=True
-    )
-
     def draw(self, context):
         layout = self.layout
-
-        # Preset menu
-        row = layout.row(align=True)
-        row.menu("VIEW3D_MT_pivotier_presets", text=bpy.types.VIEW3D_MT_pivotier_presets.bl_label)
-        row.operator("pivotier.preset_add", text="", icon='ADD')
-        row.operator("pivotier.preset_add", text="", icon='REMOVE').remove_active = True
 
         # General settings
         box = layout.box()
@@ -95,23 +54,8 @@ class PivotierPreferences(bpy.types.AddonPreferences):
         col.prop(self, "preserve_location")
         col.prop(self, "coordinate_space")
 
-        # Keymap settings
-        box = layout.box()
-        box.label(text="Keymap Settings:", icon='KEYINGSET')
-        col = box.column()
-        col.prop(self, "enable_keymaps")
-        
-        if self.enable_keymaps:
-            col.label(text="Keyboard Shortcuts:", icon='INFO')
-            col.label(text="• Align Cursor to Normal: Alt + Shift + C")
-            col.label(text="• Align Object to Cursor: Alt + Shift + A")
-            col.label(text="• Set Pivot to Base: Alt + Shift + B")
-            col.label(text="• Set Pivot to Cursor: Alt + Shift + P")
-
 # Registration
 classes = (
-    VIEW3D_MT_pivotier_presets,
-    PIVOTIER_OT_add_preset,
     PivotierPreferences,
 )
 
@@ -120,5 +64,5 @@ def register():
         bpy.utils.register_class(cls)
 
 def unregister():
-    for cls in classes:
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

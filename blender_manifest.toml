@@ -8,8 +8,11 @@ maintainer = "jhmorel <jhmorel11art@gmail.com>"
 type = "add-on"
 
 website = "https://github.com/jhmorel/Pivotier"
-tags = ["Object", "Mesh", "3D View"]
+tags = ["Object", "Mesh"]
 blender_version_min = "4.2.0"
 license = [
   "SPDX:GPL-3.0-or-later",
+]
+copyright = [
+  "2025 Javier Hernández Morel",
 ]

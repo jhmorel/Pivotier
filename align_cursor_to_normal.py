@@ -91,13 +91,12 @@ def compute_alignment_data(bm: bmesh.types.BMesh) -> Optional[Tuple[mathutils.Ve
     
     return None
 
-def align_cursor_to_normal() -> Optional[str]:
+def align_cursor_to_normal(context) -> Optional[str]:
     """Align 3D cursor to the normal of selected mesh elements.
     
     Returns:
         Error message string if operation fails, None otherwise
     """
-    context = bpy.context
     if not context.edit_object:
         return "No object in edit mode"
         
@@ -128,43 +127,28 @@ def align_cursor_to_normal() -> Optional[str]:
     context.scene.cursor.matrix = obj.matrix_world @ transform_matrix
     return None
 
-class MESH_OT_align_cursor_to_normal(bpy.types.Operator):
-    """Align 3D cursor to the normal of selected mesh elements"""
-    bl_idname = "mesh.align_cursor_to_normal"
+class VIEW3D_OT_align_cursor_to_normal(bpy.types.Operator):
+    """Align the 3D cursor to the normal of the selected face"""
+    bl_idname = "view3d.align_cursor_to_normal"
     bl_label = "Align Cursor to Normal"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
-        return context.edit_object is not None
+        return (context.mode == 'EDIT_MESH' and
+                context.active_object and
+                context.active_object.type == 'MESH')
     
     def execute(self, context):
-        error = align_cursor_to_normal()
+        error = align_cursor_to_normal(context)
         if error:
             self.report({'ERROR'}, error)
             return {'CANCELLED'}
         return {'FINISHED'}
 
-class VIEW3D_PT_align_cursor_to_normal_panel(bpy.types.Panel):
-    """Panel for Align Cursor to Normal tool"""
-    bl_label = "Align Cursor to Normal"
-    bl_idname = "VIEW3D_PT_align_cursor_to_normal_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Pivotier'
-    
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        if context.edit_object:
-            row.operator("mesh.align_cursor_to_normal")
-        else:
-            row.label(text="Enter Edit Mode to use", icon='INFO')
-
 # Registration
 classes = (
-    MESH_OT_align_cursor_to_normal,
-    VIEW3D_PT_align_cursor_to_normal_panel,
+    VIEW3D_OT_align_cursor_to_normal,
 )
 
 def register():
@@ -172,5 +156,5 @@ def register():
         bpy.utils.register_class(cls)
 
 def unregister():
-    for cls in classes:
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

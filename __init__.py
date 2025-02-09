@@ -5,8 +5,8 @@ This addon provides tools to streamline 3D modeling workflow by offering various
 alignment utilities for objects, cursor, and view management.
 
 Author: Javier Hernández Morel
-Colaborators: Eniel Rodríguez Machado
-License: MIT
+Colaborator: Eniel Rodríguez Machado
+License: SPDX-License-Identifier: GPL-3.0-or-later
 """
 
 bl_info = {
@@ -33,6 +33,20 @@ from . import align_object_to_cursor
 from . import set_pivot_to_base
 from . import set_pivot_to_cursor
 from . import align_view_to_cursor
+from . import properties
+from . import ui
+
+# Reload modules
+if "bpy" in locals():
+    importlib.reload(preferences)
+    importlib.reload(batch_operations)
+    importlib.reload(align_cursor_to_normal)
+    importlib.reload(align_object_to_cursor)
+    importlib.reload(set_pivot_to_base)
+    importlib.reload(set_pivot_to_cursor)
+    importlib.reload(align_view_to_cursor)
+    importlib.reload(properties)
+    importlib.reload(ui)
 
 # Configuration
 ADDON_MODULES = [
@@ -43,6 +57,8 @@ ADDON_MODULES = [
     set_pivot_to_base,
     set_pivot_to_cursor,
     align_view_to_cursor,
+    properties,
+    ui,
 ]
 
 # Addon category name used across all panels
@@ -67,10 +83,6 @@ def get_preferences(context: bpy.types.Context) -> Optional[preferences.Pivotier
 
 def register_keymaps() -> None:
     """Register addon keymaps."""
-    prefs = get_preferences(bpy.context)
-    if not prefs or not prefs.enable_keymaps:
-        return
-
     wm = bpy.context.window_manager
     kc = wm.keyconfigs.addon
 
@@ -127,18 +139,29 @@ def unregister_keymaps() -> None:
 
 def register() -> None:
     """Register all addon modules and their classes."""
-    for module in ADDON_MODULES:
-        importlib.reload(module)
-        module.register()
-    
+    preferences.register()
+    properties.register()  # Register properties first
+    batch_operations.register()
+    align_cursor_to_normal.register()
+    align_object_to_cursor.register()
+    set_pivot_to_base.register()
+    set_pivot_to_cursor.register()
+    align_view_to_cursor.register()
+    ui.register()  # Register UI last
     register_keymaps()
 
 def unregister() -> None:
     """Unregister all addon modules and their classes."""
     unregister_keymaps()
-    
-    for module in ADDON_MODULES:
-        module.unregister()
+    ui.unregister()  # Unregister UI first
+    align_view_to_cursor.unregister()
+    set_pivot_to_cursor.unregister()
+    set_pivot_to_base.unregister()
+    align_object_to_cursor.unregister()
+    align_cursor_to_normal.unregister()
+    batch_operations.unregister()
+    properties.unregister()
+    preferences.unregister()
 
 if __name__ == "__main__":
     register()

@@ -2,9 +2,9 @@ import bpy
 import mathutils
 
 # Función para alinear la vista al cursor 3D
-def align_view_to_cursor():
-    cursor_location = bpy.context.scene.cursor.location
-    cursor_rotation = bpy.context.scene.cursor.rotation_euler
+def align_view_to_cursor(context):
+    cursor_location = context.scene.cursor.location
+    cursor_rotation = context.scene.cursor.rotation_euler
 
     # Calcular la ubicación de la vista
     view_direction = cursor_rotation.to_matrix() @ mathutils.Vector((0, 0, -1))
@@ -15,7 +15,7 @@ def align_view_to_cursor():
     view_rotation.translation = view_location
 
     # Establecer la vista para mirar hacia la ubicación del cursor
-    for area in bpy.context.screen.areas:
+    for area in context.screen.areas:
         if area.type == 'VIEW_3D':
             for region in area.regions:
                 if region.type == 'WINDOW':
@@ -31,32 +31,30 @@ def align_view_to_cursor():
             break
 
 class VIEW3D_OT_align_view_to_cursor(bpy.types.Operator):
+    """Align view to 3D cursor's orientation"""
     bl_idname = "view3d.align_view_to_cursor"
     bl_label = "Align View to Cursor"
     bl_options = {'REGISTER', 'UNDO'}
     
     def execute(self, context):
-        align_view_to_cursor()
+        error = align_view_to_cursor(context)
+        if error:
+            self.report({'ERROR'}, error)
+            return {'CANCELLED'}
         return {'FINISHED'}
 
-class VIEW3D_PT_align_view_to_cursor_panel(bpy.types.Panel):
-    bl_label = "Align View to Cursor"
-    bl_idname = "VIEW3D_PT_align_view_to_cursor_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Pivotier'
-    
-    def draw(self, context):
-        layout = self.layout
-        layout.operator("view3d.align_view_to_cursor")
+# Registration
+classes = (
+    VIEW3D_OT_align_view_to_cursor,
+)
 
 def register():
-    bpy.utils.register_class(VIEW3D_OT_align_view_to_cursor)
-    bpy.utils.register_class(VIEW3D_PT_align_view_to_cursor_panel)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
 def unregister():
-    bpy.utils.unregister_class(VIEW3D_OT_align_view_to_cursor)
-    bpy.utils.unregister_class(VIEW3D_PT_align_view_to_cursor_panel)
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
 
 if __name__ == "__main__":
     register()

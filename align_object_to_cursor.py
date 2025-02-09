@@ -23,7 +23,7 @@ def align_object_to_cursor(objects: Set[bpy.types.Object]) -> Optional[str]:
     cursor = bpy.context.scene.cursor
     
     # Store initial states for undo
-    bpy.ops.ed.undo_push(message="Align Objects to Cursor")
+    # bpy.ops.ed.undo_push(message="Align Objects to Cursor")
     
     for obj in objects:
         # Skip non-transformable objects
@@ -36,15 +36,15 @@ def align_object_to_cursor(objects: Set[bpy.types.Object]) -> Optional[str]:
     
     return None
 
-class OBJECT_OT_align_object_to_cursor(bpy.types.Operator):
-    """Align selected objects to the 3D cursor's position and rotation"""
-    bl_idname = "object.align_object_to_cursor"
-    bl_label = "Align Object to Cursor"
+class OBJECT_OT_align_to_cursor(bpy.types.Operator):
+    """Align selected objects to 3D cursor"""
+    bl_idname = "object.align_to_cursor"
+    bl_label = "Align Objects to Cursor"
     bl_options = {'REGISTER', 'UNDO'}
     
     @classmethod
     def poll(cls, context):
-        return context.selected_objects and context.mode == 'OBJECT'
+        return context.mode == 'OBJECT' and len(context.selected_objects) > 0
     
     def execute(self, context):
         error = align_object_to_cursor(set(context.selected_objects))
@@ -53,32 +53,9 @@ class OBJECT_OT_align_object_to_cursor(bpy.types.Operator):
             return {'CANCELLED'}
         return {'FINISHED'}
 
-class VIEW3D_PT_align_object_to_cursor_panel(bpy.types.Panel):
-    """Panel for Align Object to Cursor tool"""
-    bl_label = "Align Object to Cursor"
-    bl_idname = "VIEW3D_PT_align_object_to_cursor_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Pivotier'
-    
-    def draw(self, context):
-        layout = self.layout
-        col = layout.column(align=True)
-        
-        # Show selection info and operator
-        if context.mode == 'OBJECT':
-            if context.selected_objects:
-                col.operator("object.align_object_to_cursor")
-                col.label(text=f"Selected: {len(context.selected_objects)} objects")
-            else:
-                col.label(text="No objects selected", icon='ERROR')
-        else:
-            col.label(text="Enter Object Mode to use", icon='INFO')
-
 # Registration
 classes = (
-    OBJECT_OT_align_object_to_cursor,
-    VIEW3D_PT_align_object_to_cursor_panel,
+    OBJECT_OT_align_to_cursor,
 )
 
 def register():
@@ -86,5 +63,5 @@ def register():
         bpy.utils.register_class(cls)
 
 def unregister():
-    for cls in classes:
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)

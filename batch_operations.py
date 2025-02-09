@@ -5,71 +5,28 @@ This module extends the basic alignment operations to support batch processing
 with additional controls and options for multiple object operations.
 """
 
-# This file contains batch operations for the Pivot Pro addon.
-
 import bpy
 import bmesh
 import mathutils
 from typing import Set, List, Dict, Optional, Tuple
 from . import preferences
 
-class BatchAlignmentSettings(bpy.types.PropertyGroup):
-    """Settings for batch alignment operations"""
-    
-    # Alignment axes flags
-    align_x: bpy.props.BoolProperty(
-        name="X",
-        description="Align along X axis",
-        default=True
-    )
-    align_y: bpy.props.BoolProperty(
-        name="Y",
-        description="Align along Y axis",
-        default=True
-    )
-    align_z: bpy.props.BoolProperty(
-        name="Z",
-        description="Align along Z axis",
-        default=True
-    )
-    
-    # Alignment options
-    relative_to: bpy.props.EnumProperty(
-        name="Relative To",
-        description="Reference for alignment",
-        items=[
-            ('ACTIVE', "Active Object", "Use active object as reference"),
-            ('CURSOR', "3D Cursor", "Use 3D cursor as reference"),
-            ('WORLD', "World Origin", "Use world origin as reference"),
-            ('AVERAGE', "Selection Average", "Use average of selected objects")
-        ],
-        default='ACTIVE'
-    )
-    
-    align_mode: bpy.props.EnumProperty(
-        name="Align Mode",
-        description="How to align objects",
-        items=[
-            ('LOCATION', "Location", "Align object locations"),
-            ('ROTATION', "Rotation", "Align object rotations"),
-            ('BOTH', "Both", "Align both location and rotation")
-        ],
-        default='BOTH'
-    )
-
-def get_alignment_reference(context: bpy.types.Context, settings: BatchAlignmentSettings) -> Tuple[mathutils.Vector, mathutils.Euler]:
+def get_alignment_reference(context: bpy.types.Context) -> Tuple[mathutils.Vector, mathutils.Euler]:
     """Get reference location and rotation for alignment.
     
     Args:
         context: Current Blender context
-        settings: Batch alignment settings
         
     Returns:
         Tuple of (location, rotation) to use as reference
     """
+    wm = context.window_manager
+    settings = wm.pivotier.batch_align
+    
     if settings.relative_to == 'ACTIVE':
-        active = context.active_object
-        return active.location.copy(), active.rotation_euler.copy()
+        if not context.active_object:
+            return None
+        return context.active_object.location.copy(), context.active_object.rotation_euler.copy()
     
     elif settings.relative_to == 'CURSOR':
         cursor = context.scene.cursor
@@ -99,16 +56,18 @@ def get_alignment_reference(context: bpy.types.Context, settings: BatchAlignment
             
         return loc, rot
 
-def batch_align_objects(context: bpy.types.Context, settings: BatchAlignmentSettings) -> Optional[str]:
+def batch_align_objects(context: bpy.types.Context) -> Optional[str]:
     """Perform batch alignment of selected objects.
     
     Args:
         context: Current Blender context
-        settings: Batch alignment settings
         
     Returns:
         Error message if operation fails, None otherwise
     """
+    wm = context.window_manager
+    settings = wm.pivotier.batch_align
+    
     if len(context.selected_objects) < 1:
         return "No objects selected"
         
@@ -116,7 +75,11 @@ def batch_align_objects(context: bpy.types.Context, settings: BatchAlignmentSett
         return "No active object selected"
     
     # Get reference location and rotation
-    ref_loc, ref_rot = get_alignment_reference(context, settings)
+    reference = get_alignment_reference(context)
+    if not reference:
+        return "Could not determine alignment reference"
+    
+    ref_loc, ref_rot = reference
     
     # Store initial states for undo
     bpy.ops.ed.undo_push(message="Batch Align Objects")
@@ -156,65 +119,21 @@ class OBJECT_OT_batch_align(bpy.types.Operator):
                 len(context.selected_objects) > 0)
     
     def execute(self, context):
-        settings = context.scene.batch_align_settings
-        error = batch_align_objects(context, settings)
-        
+        error = batch_align_objects(context)
         if error:
             self.report({'ERROR'}, error)
             return {'CANCELLED'}
-            
         return {'FINISHED'}
-
-class VIEW3D_PT_batch_align_panel(bpy.types.Panel):
-    """Panel for batch alignment operations"""
-    bl_label = "Batch Align"
-    bl_idname = "VIEW3D_PT_batch_align_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Pivotier'
-    
-    def draw(self, context):
-        layout = self.layout
-        settings = context.scene.batch_align_settings
-        
-        # Alignment axes
-        box = layout.box()
-        box.label(text="Align Axes:")
-        row = box.row(align=True)
-        row.prop(settings, "align_x", toggle=True)
-        row.prop(settings, "align_y", toggle=True)
-        row.prop(settings, "align_z", toggle=True)
-        
-        # Alignment options
-        col = layout.column(align=True)
-        col.prop(settings, "relative_to")
-        col.prop(settings, "align_mode")
-        
-        # Operation info
-        box = layout.box()
-        box.label(text="Selection Info:")
-        col = box.column()
-        col.label(text=f"Selected: {len(context.selected_objects)} objects")
-        if settings.relative_to == 'ACTIVE':
-            col.label(text="Active: " + (context.active_object.name if context.active_object else "None"),
-                     icon='ERROR' if not context.active_object else 'OBJECT_DATA')
-        
-        # Operator
-        layout.operator("object.batch_align")
 
 # Registration
 classes = (
-    BatchAlignmentSettings,
     OBJECT_OT_batch_align,
-    VIEW3D_PT_batch_align_panel,
 )
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.batch_align_settings = bpy.props.PointerProperty(type=BatchAlignmentSettings)
 
 def unregister():
-    for cls in classes:
+    for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-    del bpy.types.Scene.batch_align_settings

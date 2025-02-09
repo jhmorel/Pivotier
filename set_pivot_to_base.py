@@ -7,27 +7,74 @@ or ignore object rotation.
 """
 
 import bpy
+import bmesh
 import mathutils
 from typing import Optional, List, Tuple
 
-class SetPivotToBaseProperties(bpy.types.PropertyGroup):
-    """Properties for Set Pivot to Base operator"""
-    ignore_rotation: bpy.props.BoolProperty(
-        name="Treat As Default Orientation",
-        description="Calculate base as if current rotation was the default orientation (without applying rotation)",
-        default=False
-    )
-
-def get_base_center_world(obj: bpy.types.Object, ignore_rotation: bool = False) -> mathutils.Vector:
+def get_base_center_world(obj: bpy.types.Object, ignore_rotation: bool = False, use_lowest_vertex: bool = False) -> mathutils.Vector:
     """Calculate the world position of the object's base center.
     
     Args:
         obj: The object to calculate base center for
         ignore_rotation: If True, calculate base as if current rotation was applied to mesh data
+        use_lowest_vertex: If True, use lowest vertex instead of bounds
         
     Returns:
         World space position of the object's base center
     """
+    if use_lowest_vertex and obj.type == 'MESH':
+        # Find lowest vertex in world space
+        lowest_z = float('inf')
+        lowest_vertices = []
+        
+        # Get a BMesh to access vertices
+        if obj.mode == 'EDIT':
+            bm = bmesh.from_edit_mesh(obj.data)
+        else:
+            bm = bmesh.new()
+            bm.from_mesh(obj.data)
+        
+        try:
+            # First pass: find the lowest Z value
+            for vert in bm.verts:
+                # Transform vertex to world space
+                if ignore_rotation:
+                    # Get the object's current world matrix and its components
+                    loc, rot, scale = obj.matrix_world.decompose()
+                    rot_matrix = rot.to_matrix().to_4x4()
+                    scale_matrix = mathutils.Matrix.Diagonal(scale.to_4d())
+                    apply_rotation_matrix = rot_matrix @ scale_matrix
+                    vert_world = loc + (apply_rotation_matrix @ vert.co)
+                else:
+                    vert_world = obj.matrix_world @ vert.co
+                
+                if abs(vert_world.z - lowest_z) < 0.0001:  # Using small epsilon for float comparison
+                    lowest_vertices.append(vert.co.copy())
+                elif vert_world.z < lowest_z:
+                    lowest_z = vert_world.z
+                    lowest_vertices = [vert.co.copy()]
+        finally:
+            if obj.mode != 'EDIT':
+                bm.free()
+        
+        if lowest_vertices:
+            # Calculate average position of lowest vertices
+            avg_pos = mathutils.Vector((0, 0, 0))
+            for vertex in lowest_vertices:
+                avg_pos += vertex
+            avg_pos /= len(lowest_vertices)
+            
+            # Move the average position to world space
+            if ignore_rotation:
+                loc, rot, scale = obj.matrix_world.decompose()
+                rot_matrix = rot.to_matrix().to_4x4()
+                scale_matrix = mathutils.Matrix.Diagonal(scale.to_4d())
+                apply_rotation_matrix = rot_matrix @ scale_matrix
+                return loc + (apply_rotation_matrix @ avg_pos)
+            else:
+                return obj.matrix_world @ avg_pos
+
+    # If not using lowest vertex or no vertex found, use bounds
     if ignore_rotation:
         # Get the object's current world matrix and its components
         loc, rot, scale = obj.matrix_world.decompose()
@@ -35,10 +82,8 @@ def get_base_center_world(obj: bpy.types.Object, ignore_rotation: bool = False) 
         scale_matrix = mathutils.Matrix.Diagonal(scale.to_4d())
         
         # Create matrix that represents what would happen if we applied the rotation
-        # This is equivalent to Blender's "Apply Rotation" operation
         apply_rotation_matrix = rot_matrix @ scale_matrix
         
-        # Transform bounding box corners as if rotation was applied
         bbox_corners = [mathutils.Vector(corner) for corner in obj.bound_box]
         bbox_transformed = [apply_rotation_matrix @ v for v in bbox_corners]
         
@@ -57,49 +102,47 @@ def get_base_center_world(obj: bpy.types.Object, ignore_rotation: bool = False) 
         ))
         
         # Move the center to world space
-        # We only use location because we've already applied rotation and scale
         return loc + center
     else:
-        # Get bounding box in local coordinates
-        local_bbox = [mathutils.Vector(corner) for corner in obj.bound_box]
+        # Use regular bounding box in world space
+        bbox_corners_world = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
         
-        # Find base coordinates (minimum Z)
-        min_z = min(v.z for v in local_bbox)
-        min_x = min(v.x for v in local_bbox)
-        max_x = max(v.x for v in local_bbox)
-        min_y = min(v.y for v in local_bbox)
-        max_y = max(v.y for v in local_bbox)
+        # Find the bounds in world space
+        min_x = min(v.x for v in bbox_corners_world)
+        max_x = max(v.x for v in bbox_corners_world)
+        min_y = min(v.y for v in bbox_corners_world)
+        max_y = max(v.y for v in bbox_corners_world)
+        min_z = min(v.z for v in bbox_corners_world)
         
-        # Calculate base center in local space
-        base_center_local = mathutils.Vector((
-            (min_x + max_x) / 2,
-            (min_y + max_y) / 2,
-            min_z
+        # Return the base center point in world space
+        return mathutils.Vector((
+            (min_x + max_x) / 2,  # Center in X
+            (min_y + max_y) / 2,  # Center in Y
+            min_z                 # Bottom in Z
         ))
-        
-        # Convert to world space using full transformation
-        return obj.matrix_world @ base_center_local
 
-def set_pivot_to_base(objects: List[bpy.types.Object], ignore_rotation: bool = False) -> Optional[str]:
+def set_pivot_to_base(context, ignore_rotation: bool = False, use_lowest_vertex: bool = False) -> Optional[str]:
     """Set the pivot point to the base center for each object.
     
     Args:
-        objects: List of objects to process
-        ignore_rotation: If True, calculate base as if objects had no rotation
+        context: The current context
+        ignore_rotation: If True, calculate base as if current rotation was applied to mesh data
+        use_lowest_vertex: If True, use lowest vertex instead of bounds
         
     Returns:
         Error message if operation fails, None otherwise
     """
+    objects = context.selected_objects
     if not objects:
         return "No objects selected"
     
     # Store cursor location and selection states
-    cursor = bpy.context.scene.cursor
+    cursor = context.scene.cursor
     cursor_location = cursor.location.copy()
     cursor_rotation = cursor.rotation_euler.copy()
     
     # Store active object
-    active_obj = bpy.context.view_layer.objects.active
+    active_obj = context.view_layer.objects.active
     
     # Store selection states
     selection_states = {obj: obj.select_get() for obj in bpy.data.objects}
@@ -115,11 +158,10 @@ def set_pivot_to_base(objects: List[bpy.types.Object], ignore_rotation: bool = F
                 
             # Select only this object and make it active
             obj.select_set(True)
-            bpy.context.view_layer.objects.active = obj
+            context.view_layer.objects.active = obj
             
             # Calculate and set new pivot
-            base_center = get_base_center_world(obj, ignore_rotation)
-            cursor.location = base_center
+            cursor.location = get_base_center_world(obj, ignore_rotation, use_lowest_vertex)
             
             if ignore_rotation:
                 # Reset cursor rotation when ignoring object rotation
@@ -145,90 +187,38 @@ def set_pivot_to_base(objects: List[bpy.types.Object], ignore_rotation: bool = F
         
         # Restore active object
         if active_obj:
-            bpy.context.view_layer.objects.active = active_obj
+            context.view_layer.objects.active = active_obj
     
     return None
 
 class OBJECT_OT_set_pivot_to_base(bpy.types.Operator):
-    """Set the pivot point to the base center of selected objects"""
+    """Set pivot point to base of selected objects"""
     bl_idname = "object.set_pivot_to_base"
     bl_label = "Set Pivot to Base"
     bl_options = {'REGISTER', 'UNDO'}
     
-    ignore_rotation: bpy.props.BoolProperty(
-        name="Treat As Default Orientation",
-        description="Calculate base as if current rotation was the default orientation (without applying rotation)",
-        default=False
-    )
-    
     @classmethod
     def poll(cls, context):
-        return (context.mode == 'OBJECT' and
-                context.selected_objects and
-                any(obj.type == 'MESH' for obj in context.selected_objects))
-    
-    def invoke(self, context, event):
-        self.ignore_rotation = context.scene.set_pivot_to_base_props.ignore_rotation
-        return self.execute(context)
+        return context.mode == 'OBJECT' and len(context.selected_objects) > 0
     
     def execute(self, context):
-        error = set_pivot_to_base(context.selected_objects, self.ignore_rotation)
+        wm = context.window_manager
+        props = wm.pivotier.pivot_to_base
+        error = set_pivot_to_base(context, props.ignore_rotation, props.use_lowest_vertex)
         if error:
             self.report({'ERROR'}, error)
             return {'CANCELLED'}
-        
-        # Update the scene property to match
-        context.scene.set_pivot_to_base_props.ignore_rotation = self.ignore_rotation
-        
-        num_processed = sum(1 for obj in context.selected_objects if obj.type == 'MESH')
-        self.report({'INFO'}, f"Set pivot to base for {num_processed} objects")
         return {'FINISHED'}
-    
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "ignore_rotation")
-
-class VIEW3D_PT_set_pivot_to_base_panel(bpy.types.Panel):
-    """Panel for Set Pivot to Base tool"""
-    bl_label = "Set Pivot to Base"
-    bl_idname = "VIEW3D_PT_set_pivot_to_base_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Pivotier'
-    
-    def draw(self, context):
-        layout = self.layout
-        props = context.scene.set_pivot_to_base_props
-        
-        if context.mode == 'OBJECT':
-            # Count eligible objects
-            mesh_objects = [obj for obj in context.selected_objects if obj.type == 'MESH']
-            num_selected = len(mesh_objects)
-            
-            if num_selected > 0:
-                col = layout.column(align=True)
-                col.prop(props, "ignore_rotation")
-                op = col.operator("object.set_pivot_to_base")
-                col.label(text=f"Selected: {num_selected} mesh objects")
-            else:
-                col = layout.column()
-                col.label(text="Select mesh objects to use", icon='INFO')
-        else:
-            layout.label(text="Enter Object Mode to use", icon='INFO')
 
 # Registration
 classes = (
-    SetPivotToBaseProperties,
     OBJECT_OT_set_pivot_to_base,
-    VIEW3D_PT_set_pivot_to_base_panel,
 )
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    bpy.types.Scene.set_pivot_to_base_props = bpy.props.PointerProperty(type=SetPivotToBaseProperties)
 
 def unregister():
-    del bpy.types.Scene.set_pivot_to_base_props
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
