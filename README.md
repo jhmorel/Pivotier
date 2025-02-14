@@ -71,4 +71,4 @@ This is a free-to-use tool, and I hope it proves useful. If you'd like to suppor
 
 ### License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the [GPL-3.0-or-later](https://opensource.org/licenses/GPL-3.0) license.
