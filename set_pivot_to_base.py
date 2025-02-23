@@ -74,52 +74,26 @@ def get_base_center_world(obj: bpy.types.Object, ignore_rotation: bool = False, 
             else:
                 return obj.matrix_world @ avg_pos
 
-    # If not using lowest vertex or no vertex found, use bounds
-    if ignore_rotation:
-        # Get the object's current world matrix and its components
-        loc, rot, scale = obj.matrix_world.decompose()
-        rot_matrix = rot.to_matrix().to_4x4()
-        scale_matrix = mathutils.Matrix.Diagonal(scale.to_4d())
-        
-        # Create matrix that represents what would happen if we applied the rotation
-        apply_rotation_matrix = rot_matrix @ scale_matrix
-        
-        bbox_corners = [mathutils.Vector(corner) for corner in obj.bound_box]
-        bbox_transformed = [apply_rotation_matrix @ v for v in bbox_corners]
-        
-        # Find the bounds in transformed space
-        min_x = min(v.x for v in bbox_transformed)
-        max_x = max(v.x for v in bbox_transformed)
-        min_y = min(v.y for v in bbox_transformed)
-        max_y = max(v.y for v in bbox_transformed)
-        min_z = min(v.z for v in bbox_transformed)
-        
-        # Calculate the base center point
-        center = mathutils.Vector((
-            (min_x + max_x) / 2,  # Center in X
-            (min_y + max_y) / 2,  # Center in Y
-            min_z                 # Bottom in Z
-        ))
-        
-        # Move the center to world space
-        return loc + center
     else:
-        # Use regular bounding box in world space
-        bbox_corners_world = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
-        
-        # Find the bounds in world space
-        min_x = min(v.x for v in bbox_corners_world)
-        max_x = max(v.x for v in bbox_corners_world)
-        min_y = min(v.y for v in bbox_corners_world)
-        max_y = max(v.y for v in bbox_corners_world)
-        min_z = min(v.z for v in bbox_corners_world)
-        
-        # Return the base center point in world space
-        return mathutils.Vector((
-            (min_x + max_x) / 2,  # Center in X
-            (min_y + max_y) / 2,  # Center in Y
-            min_z                 # Bottom in Z
+        # Get bounding box in local coordinates
+        local_bbox = [mathutils.Vector(corner) for corner in obj.bound_box]
+
+        # Find base coordinates (minimum Z)
+        min_z = min(v.z for v in local_bbox)
+        min_x = min(v.x for v in local_bbox)
+        max_x = max(v.x for v in local_bbox)
+        min_y = min(v.y for v in local_bbox)
+        max_y = max(v.y for v in local_bbox)
+
+        # Calculate base center in local space
+        base_center_local = mathutils.Vector((
+            (min_x + max_x) / 2,
+            (min_y + max_y) / 2,
+            min_z
         ))
+
+        # Convert to world space using full transformation
+        return obj.matrix_world @ base_center_local
 
 def set_pivot_to_base(context, ignore_rotation: bool = False, use_lowest_vertex: bool = False) -> Optional[str]:
     """Set the pivot point to the base center for each object.
